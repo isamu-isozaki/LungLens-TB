@@ -8,6 +8,10 @@ chat_patient = ChatPatient()
 def summarize_text():
     data = request.get_json()
     report_text = data.get('text')
+    
+    #Replace the double quotes
+    report_text = report_text.replace('"','')
+
     if not report_text:
         return jsonify({'error': 'No text provided'}), 400
 
@@ -21,6 +25,10 @@ def summarize_text():
 def translate_text():
     data = request.get_json()
     text = data.get('text')
+    
+    #Replace the double quotes
+    text = text.replace('"','')
+
     language = data.get('language', 'hindi')  # Default language is Hindi
     if not text:
         return jsonify({'error': 'No text provided'}), 400

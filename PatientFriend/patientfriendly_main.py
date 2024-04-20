@@ -1,6 +1,7 @@
 from ChatPatient import ChatPatient
 
 cp = ChatPatient()
+tranlate_to = 'bengali'
 
 radiology_report = """No acute cardiopulmonary findings. Specifically, no radiographic evidence of active tuberculosis."
 Old granulomatous disease. No acute pulmonary disease.
@@ -15,7 +16,6 @@ Patchy right lower lobe infiltrate as well as probable left basilar infiltrate v
 
 patient_friendly_text = cp.get_friendly_text(radiology_report)
 
-
 print(patient_friendly_text)
-
-print(cp.translate_text(patient_friendly_text, 'hindi'))
+print(f"Translating to {tranlate_to}...")
+print(cp.translate_text(patient_friendly_text, tranlate_to))
