@@ -1,3 +1,92 @@
+# ChatPatient API
+
+## Overview
+The `ChatPatient` API leverages a Flask-based web service to provide two main functionalities:
+1. **Summarization of Radiology Reports**: Converts detailed radiology text into simplified, patient-friendly summaries.
+2. **Translation of Text**: Translates text from English to other languages, defaulting to Hindi but capable of handling other languages as specified.
+
+## Installation
+
+### Prerequisites
+- Python 3.6 or higher.
+- Flask
+- An instance of `ChatPatient` from the `ChatPatient.py` module, which utilizes OpenAI's GPT-4 model.
+
+### Dependencies
+Before running the API, you will need to install the necessary Python packages. Run the following command to install Flask:
+
+```bash
+pip install flask
+```
+
+### API Endpoints
+
+#### Summarize Text
+URL: /api/summarize
+Method: POST
+```
+{
+  "text": "[plain text string of the radiology report]"
+}
+```
+
+Success Response:
+Code: 200
+Content:
+
+```
+{
+  "summary": "[summary of the report]"
+}
+```
+
+Error Response:
+Code: 400 BAD REQUEST
+Content: {"error": "No text provided"}
+Code: 500 INTERNAL SERVER ERROR
+Content: {"error": "[error message]"}
+
+#### Translate Text
+URL: /api/translate
+Method: POST
+Data Constraints:
+json
+```{
+  "text": "[plain text string]",
+  "language": "[optional; default is 'hindi']"
+}
+```
+Success Response:
+Code: 200
+Content:
+json
+```{
+  "translated_text": "[translated text]"
+}
+```
+
+Error Response:
+Code: 400 BAD REQUEST
+Content: {"error": "No text provided"}
+Code: 500 INTERNAL SERVER ERROR
+Content: {"error": "[error message]"}
+
+
+### Usage Examples
+To interact with the API, you can use tools like curl or Postman. Here are some example curl commands:
+
+Summarize Text
+```
+bash
+curl -X POST http://localhost:5000/api/summarize -H "Content-Type: application/json" -d '{"text":"Patient shows signs of consolidation..."}'
+```
+Translate Text
+```
+bash
+Copy code
+curl -X POST http://localhost:5000/api/translate -H "Content-Type: application/json" -d 
+```
+
 # ChatPatient
 
 ## Overview
@@ -53,3 +142,4 @@ except Exception as e:
     print(f"An error occurred: {e}")
 
 ```
+
