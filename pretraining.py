@@ -33,11 +33,43 @@ import timm
 from timm.models import ResNet, ConvNeXt, EfficientNet, DenseNet
 from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
 
+from torchmetrics import Accuracy, F1Score
+
 logger = get_logger(__name__)
 
-def log_validation(model, accelerator):
+def log_validation(model, accelerator, val_dataloader):
     logger.info("Logging validation")
-    pass
+    
+    v_model = accelerator.unwrap_model(model)
+    
+    # Metrics
+    accuracy_metric = Accuracy(num_classes=2, average='macro', task='binary').to(accelerator.device)
+    f1_metric = F1Score(num_classes=2, threshold=0.5, task='binary').to(accelerator.device)
+
+    # Get v_model to evaluation mode
+    v_model.eval()
+    with torch.no_grad():
+        running_loss = 0
+        for batch in tqdm(val_dataloader):
+            image = batch["pixel_values"].to(device=accelerator.device)
+            target = batch["labels"].to(device=accelerator.device).long()
+            predicted = v_model(image)
+            loss = F.binary_cross_entropy_with_logits(predicted.float(), target.float(), reduction="mean")
+            running_loss+=loss
+            
+            accuracy_metric.update(predicted, target)
+            f1_metric.update(predicted, target)
+
+    print(predicted, target)
+    # Compute metrics
+    avg_loss = running_loss / len(val_dataloader)
+    accuracy = accuracy_metric.compute()
+    print("Accuracy computed")
+    f1 = f1_metric.compute()
+
+    logger.info(f"Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}, F1 Score: {f1:.4f}")
+    return avg_loss, accuracy, f1
+
 
 def save_progress(model, model_path, accelerator):
     logger.info("Saving model")
@@ -76,7 +108,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
-        "--train_batch_size", type=int, default=16, help="Batch size (per device) for the training dataloader."
+        "--train_batch_size", type=int, default=384, help="Batch size (per device) for the training dataloader."
     )
     parser.add_argument("--num_train_epochs", type=int, default=100)
     parser.add_argument(
@@ -124,7 +156,7 @@ def parse_args():
     parser.add_argument(
         "--dataloader_num_workers",
         type=int,
-        default=0,
+        default=4,
         help=(
             "Number of subprocesses to use for data loading. 0 means that the data will be loaded in the main process."
         ),
@@ -165,23 +197,14 @@ def parse_args():
     parser.add_argument(
         "--validation_steps",
         type=int,
-        default=100,
+        default=5,
         help=(
             "Run validation every X steps. Validation consists of running the prompt"
             " `args.validation_prompt` multiple times: `args.num_validation_images`"
             " and logging the images."
         ),
     )
-    parser.add_argument(
-        "--validation_epochs",
-        type=int,
-        default=None,
-        help=(
-            "Deprecated in favor of validation_steps. Run validation every X epochs. Validation consists of running the prompt"
-            " `args.validation_prompt` multiple times: `args.num_validation_images`"
-            " and logging the images."
-        ),
-    )
+
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     parser.add_argument(
         "--checkpointing_steps",
@@ -194,6 +217,7 @@ def parse_args():
     )
     args = parser.parse_args()
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
+    
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
     return args
@@ -229,7 +253,7 @@ class NIHDataset(Dataset):
         example["pixel_values"] = self.transform(image)
         example["labels"] = label
         return example
-
+    
 def collate_fn(examples):
     pixel_values = [example["pixel_values"] for example in examples]
     labels = [torch.tensor(example["labels"]).long() for example in examples]
@@ -280,6 +304,7 @@ def main():
             os.makedirs(args.output_dir, exist_ok=True)
 
     model = timm.create_model(args.timm_model_name, pretrained=True)
+
     # for all global pool below I assumed it was average
     if isinstance(model, ConvNeXt):
         if isinstance(model.head, ClassifierHead):
@@ -336,23 +361,41 @@ def main():
 
     dataset = load_dataset(args.train_dataset, args.train_configuration)["train"]
 
+    train_val_split = dataset.train_test_split(test_size=0.1)
+    # Now, train_val_split is a DatasetDict containing two datasets: 'train' and 'test'
+    train_dataset = train_val_split['train']
+    val_dataset = train_val_split['test']
+
+    ## Separate train and validation here.
+
     # Dataset and DataLoaders creation:
     train_dataset = NIHDataset(
-        dataset=dataset,
+        dataset=train_dataset,
         transform=transform
     )
+    
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers, collate_fn=collate_fn
     )
-    if args.validation_epochs is not None:
-        warnings.warn(
-            f"FutureWarning: You are doing logging with validation_epochs={args.validation_epochs}."
-            " Deprecated validation_epochs in favor of `validation_steps`"
-            f"Setting `args.validation_steps` to {args.validation_epochs * len(train_dataset)}",
-            FutureWarning,
-            stacklevel=2,
-        )
-        args.validation_steps = args.validation_epochs * len(train_dataset)
+
+    # Dataset and DataLoaders creation:
+    val_dataset = NIHDataset(
+        dataset=val_dataset,
+        transform=transform
+    )
+    val_dataloader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers, collate_fn=collate_fn
+    )
+
+    # if args.validation_epochs is not None:
+    #     warnings.warn(
+    #         f"FutureWarning: You are doing logging with validation_epochs={args.validation_epochs}."
+    #         " Deprecated validation_epochs in favor of `validation_steps`"
+    #         f"Setting `args.validation_steps` to {args.validation_epochs * len(train_dataset)}",
+    #         FutureWarning,
+    #         stacklevel=2,
+    #     )
+    #     args.validation_steps = args.validation_epochs * len(train_dataset)
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
@@ -452,13 +495,25 @@ def main():
                         model, save_path, accelerator
                     )
 
+                logs = {"training loss": loss.detach().item(), 
+                    "lr": lr_scheduler.get_last_lr()[0]}
+                
                 if accelerator.is_main_process:
+                    print( global_step, args.validation_steps)
                     if global_step % args.validation_steps == 0:
-                        images = log_validation(
-                            model, accelerator
+                        val_loss, val_accuracy, val_f1 = log_validation(
+                            model, accelerator, val_dataloader
                         )
 
-            logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+                        print(val_loss, val_accuracy, val_f1)
+
+                        logs = {"training loss": loss.detach().item(), 
+                                "validation loss": val_loss.detach().item(),
+                                "validation accuracy": val_accuracy.item(),
+                                "validation f1": val_f1.item(),
+                                "lr": lr_scheduler.get_last_lr()[0]}
+            
+            
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 
