@@ -59,11 +59,14 @@ def parse_args():
     parser.add_argument(
         "--timm_model_name",
         type=str,
-        default="convnext_base",
+        default="resnet50",
         help="Name of timm model.",
     )
     parser.add_argument(
-        "--train_datataset", type=str, default="alkzar90/NIH-Chest-X-ray-dataset", help="Path to hf dataset."
+        "--train_dataset", type=str, default="alkzar90/NIH-Chest-X-ray-dataset", help="Path to hf dataset."
+    )
+    parser.add_argument(
+        "--train_configuration", type=str, default="image-classification", help="Either image-classification or object-detection."
     )
     parser.add_argument(
         "--output_dir",
@@ -79,7 +82,7 @@ def parse_args():
     parser.add_argument(
         "--max_train_steps",
         type=int,
-        default=5000,
+        default=1000000,
         help="Total number of training steps to perform.  If provided, overrides num_train_epochs.",
     )
     parser.add_argument(
@@ -230,7 +233,6 @@ class NIHDataset(Dataset):
 def collate_fn(examples):
     pixel_values = [example["pixel_values"] for example in examples]
     labels = [torch.tensor(example["labels"]).long() for example in examples]
-    print(len(pixel_values), len(labels))
 
     pixel_values = torch.stack(pixel_values)
     pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
@@ -332,7 +334,7 @@ def main():
         eps=args.adam_epsilon,
     )
 
-    dataset = load_dataset(args.train_dataset)["train"]
+    dataset = load_dataset(args.train_dataset, args.train_configuration)["train"]
 
     # Dataset and DataLoaders creation:
     train_dataset = NIHDataset(
