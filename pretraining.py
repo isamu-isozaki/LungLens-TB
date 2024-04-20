@@ -67,7 +67,7 @@ def parse_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="text-inversion-model",
+        default="lunglens-model",
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
@@ -375,7 +375,6 @@ def main():
     )
 
     # keep original embeddings as reference
-    orig_embeds_params = accelerator.unwrap_model(model).weight.data.clone()
     for epoch in range(first_epoch, args.num_train_epochs):
         model.train()
         for step, batch in enumerate(train_dataloader):
