@@ -30,6 +30,8 @@ from diffusers.optimization import get_scheduler
 
 import wandb
 import timm
+from timm.models import ResNet, ConvNeXt, EfficientNet, DenseNet
+from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
 
 logger = get_logger(__name__)
 
@@ -45,7 +47,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Simple training script.")
     parser.add_argument(
         "--freeze_features",
-        type=bool,
         action="store_true",
         help="Freeze everything except base in timm model.",
     )
@@ -192,10 +193,6 @@ def parse_args():
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
-
-    if args.train_data_dir is None:
-        raise ValueError("You must specify a train data directory.")
-
     return args
 
 
@@ -218,17 +215,34 @@ class NIHDataset(Dataset):
         example = {}
         element = self.dataset[i % self.num_images]
         image = element["image"]
-        label = int(element["labels"] != [0])
-
+        if element["labels"] == [0]:
+            label = [1, 0]
+        else:
+            label = [0, 1]
 
         if not image.mode == "RGB":
             image = image.convert("RGB")
 
         example["pixel_values"] = self.transform(image)
-        example["label"] = label
+        example["labels"] = label
         return example
 
+def collate_fn(examples):
+    pixel_values = [example["pixel_values"] for example in examples]
+    labels = [torch.tensor(example["labels"]).long() for example in examples]
+    print(len(pixel_values), len(labels))
 
+    pixel_values = torch.stack(pixel_values)
+    pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+
+    labels = torch.stack(labels)
+
+    batch = {
+        "pixel_values": pixel_values,
+        "labels": labels,
+    }
+
+    return batch
 
 def main():
     args = parse_args()
@@ -264,10 +278,41 @@ def main():
             os.makedirs(args.output_dir, exist_ok=True)
 
     model = timm.create_model(args.timm_model_name, pretrained=True)
-    model.head = torch.nn.Linear(model.embed_dim, 2)
+    # for all global pool below I assumed it was average
+    if isinstance(model, ConvNeXt):
+        if isinstance(model.head, ClassifierHead):
+            model.head = ClassifierHead(
+                model.num_features,
+                2,
+                pool_type="avg",
+                drop_rate=model.drop_rate
+            )
+        else:
+            head_hidden_size = None
+            if "convnext_large_mlp" in args.timm_model_name:
+                head_hidden_size = 1536
+            norm_layer = LayerNorm2d
+            model.head = NormMlpClassifierHead(
+                model.num_features,
+                2,
+                hidden_size=head_hidden_size,
+                pool_type="avg",
+                drop_rate=model.drop_rate,
+                norm_layer=norm_layer,
+                act_layer='gelu',
+            )
+        head = model.head
+    elif isinstance(model, ResNet):
+        model.global_pool, model.fc = create_classifier(model.num_features, 2, pool_type="avg")
+        head = model.fc
+    elif isinstance(model, EfficientNet) or isinstance(model, DenseNet):
+        model.global_pool, model.classifier = create_classifier(model.num_features, 2, pool_type="avg")
+        head = model.classifier
+    else:
+        raise NotImplementedError(f"{args.timm_model_name} logic is not implemented")
     if args.freeze_features:
         model.requires_grad_(False)
-        model.head.requires_grad_(True)
+        head.requires_grad_(True)
     data_cfg = timm.data.resolve_data_config(model.pretrained_cfg)
     # warning: below does centercropping
     transform = timm.data.create_transform(**data_cfg)
@@ -280,7 +325,7 @@ def main():
 
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(
-        model.head.parameters() if args.freeze_features else model.parameters(),  # only optimize the embeddings
+        head.parameters() if args.freeze_features else model.parameters(),  # only optimize the embeddings
         lr=args.learning_rate,
         betas=(args.adam_beta1, args.adam_beta2),
         weight_decay=args.adam_weight_decay,
@@ -295,7 +340,7 @@ def main():
         transform=transform
     )
     train_dataloader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers
+        train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers, collate_fn=collate_fn
     )
     if args.validation_epochs is not None:
         warnings.warn(
@@ -380,10 +425,9 @@ def main():
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(model):
                 image = batch["pixel_values"].to(device=accelerator.device, dtype=weight_dtype)
-                target = batch["label"]
+                target = batch["labels"].to(device=accelerator.device).long()
                 predicted = model(image)
-
-                loss = F.binary_cross_entropy(predicted.float(), target.float(), reduction="mean")
+                loss = F.binary_cross_entropy_with_logits(predicted.float(), target.float(), reduction="mean")
 
                 accelerator.backward(loss)
 
@@ -407,7 +451,7 @@ def main():
                     )
 
                 if accelerator.is_main_process:
-                    if args.validation_prompt is not None and global_step % args.validation_steps == 0:
+                    if global_step % args.validation_steps == 0:
                         images = log_validation(
                             model, accelerator
                         )
