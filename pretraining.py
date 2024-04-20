@@ -39,9 +39,9 @@ def log_validation(model, accelerator):
     logger.info("Logging validation")
     pass
 
-def save_progress(model, accelerator):
+def save_progress(model, model_path, accelerator):
     logger.info("Saving model")
-    pass
+    torch.save(accelerator.unwrap_model(model).state_dict(), model_path)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple training script.")
@@ -447,7 +447,7 @@ def main():
                     )
                     save_path = os.path.join(args.output_dir, weight_name)
                     save_progress(
-                        model, accelerator
+                        model, save_path, accelerator
                     )
 
                 if accelerator.is_main_process:
