@@ -44,6 +44,12 @@ def save_progress(model, accelerator):
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple training script.")
     parser.add_argument(
+        "--freeze_features",
+        type=bool,
+        action="store_true",
+        help="Freeze everything except base in timm model.",
+    )
+    parser.add_argument(
         "--save_steps",
         type=int,
         default=500,
@@ -58,7 +64,6 @@ def parse_args():
     parser.add_argument(
         "--train_datataset", type=str, default="alkzar90/NIH-Chest-X-ray-dataset", help="Path to hf dataset."
     )
-    parser.add_argument("--repeats", type=int, default=100, help="How many times to repeat the training data.")
     parser.add_argument(
         "--output_dir",
         type=str,
@@ -199,15 +204,10 @@ class NIHDataset(Dataset):
         self,
         dataset,
         transform,
-        repeats=100,
-        set="train",
     ):
         self.dataset = dataset
         self.num_images = len(self.dataset)
         self._length = self.num_images
-
-        if set == "train":
-            self._length = self.num_images * repeats
 
         self.transform = transform
 
@@ -264,6 +264,10 @@ def main():
             os.makedirs(args.output_dir, exist_ok=True)
 
     model = timm.create_model(args.timm_model_name, pretrained=True)
+    model.head = torch.nn.Linear(model.embed_dim, 2)
+    if args.freeze_features:
+        model.requires_grad_(False)
+        model.head.requires_grad_(True)
     data_cfg = timm.data.resolve_data_config(model.pretrained_cfg)
     # warning: below does centercropping
     transform = timm.data.create_transform(**data_cfg)
@@ -276,7 +280,7 @@ def main():
 
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(
-        model.parameters(),  # only optimize the embeddings
+        model.head.parameters() if args.freeze_features else model.parameters(),  # only optimize the embeddings
         lr=args.learning_rate,
         betas=(args.adam_beta1, args.adam_beta2),
         weight_decay=args.adam_weight_decay,
@@ -318,10 +322,10 @@ def main():
         num_cycles=args.lr_num_cycles,
     )
 
-    text_encoder.train()
+    model.train()
     # Prepare everything with our `accelerator`.
-    text_encoder, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-        text_encoder, optimizer, train_dataloader, lr_scheduler
+    model, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
+        model, optimizer, train_dataloader, lr_scheduler
     )
 
     # For mixed precision training we cast all non-trainable weigths (vae, non-lora text_encoder and non-lora unet) to half-precision
