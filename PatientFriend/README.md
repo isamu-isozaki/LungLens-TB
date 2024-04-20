@@ -32,13 +32,15 @@ This endpoint provides a patient-friendly summary of a radiology report.
     "text": "[plain text string of the radiology report]"
   }
 - **Success Response**:
-```Code: 200
+```
+Code: 200
 Content: {
   "summary": "[summary of the report]"
 }
 ```
 - **Error Response**: 
-```Code: 400 BAD REQUEST
+```
+Code: 400 BAD REQUEST
 Content: {"error": "No text provided"}
 Code: 500 INTERNAL SERVER ERROR
 Content: {"error": "[error message]"}
@@ -57,14 +59,17 @@ This endpoint translates a given text into the specified language, defaulting to
     "language": "[optional; default is 'hindi']"
     }
 ```
+
 - **Success Response**:
-```Code: 200
+```
+Code: 200
 Content: {
   "translated_text": "[translated text]"
 }
 ```
 - **Error Response**: 
-```Code: 400 BAD REQUEST
+```
+Code: 400 BAD REQUEST
 Content: {"error": "No text provided"}
 Code: 500 INTERNAL SERVER ERROR
 Content: {"error": "[error message]"}
