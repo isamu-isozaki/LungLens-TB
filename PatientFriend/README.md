@@ -20,57 +20,55 @@ pip install flask
 ```
 
 ### API Endpoints
-
 #### Summarize Text
-URL: /api/summarize
-Method: POST
-```
-{
-  "text": "[plain text string of the radiology report]"
-}
-```
+This endpoint provides a patient-friendly summary of a radiology report.
 
-Success Response:
-Code: 200
-Content:
-
-```
-{
+- **URL**: `/api/summarize`
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "text": "[plain text string of the radiology report]"
+  }
+- **Success Response**:
+```Code: 200
+Content: {
   "summary": "[summary of the report]"
 }
 ```
-
-Error Response:
-Code: 400 BAD REQUEST
+- **Error Response**: 
+```Code: 400 BAD REQUEST
 Content: {"error": "No text provided"}
 Code: 500 INTERNAL SERVER ERROR
 Content: {"error": "[error message]"}
+```
 
 #### Translate Text
-URL: /api/translate
-Method: POST
-Data Constraints:
-json
-```{
-  "text": "[plain text string]",
-  "language": "[optional; default is 'hindi']"
-}
+This endpoint translates a given text into the specified language, defaulting to Hindi if no language is specified.
+
+- **URL**: `/api/translate`
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **Request Body**:
+```json
+    {
+    "text": "[plain text string]",
+    "language": "[optional; default is 'hindi']"
+    }
 ```
-Success Response:
-Code: 200
-Content:
-json
-```{
+- **Success Response**:
+```Code: 200
+Content: {
   "translated_text": "[translated text]"
 }
 ```
-
-Error Response:
-Code: 400 BAD REQUEST
+- **Error Response**: 
+```Code: 400 BAD REQUEST
 Content: {"error": "No text provided"}
 Code: 500 INTERNAL SERVER ERROR
 Content: {"error": "[error message]"}
-
+```
 
 ### Usage Examples
 To interact with the API, you can use tools like curl or Postman. Here are some example curl commands:
