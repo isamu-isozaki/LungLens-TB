@@ -103,14 +103,11 @@
         </form>
         </button>
     </div>
-    <main>
-        <section class="imageSection">
+    <main style="align-self: center;">
+        <section class="imageSection" style="padding-right: 8rem;">
             <div class="imageBox"id="gradcam">
-                <img src="input_image.jpg"  alt="Input X-ray Image">
+                <img height="500" width="500" style="object-fit: cover;" src="placeholder.png"  alt="Input X-ray Image">
             </div>
-            <div class="imageBox">
-                <img src="gradcam_image.jpg" alt="GradCAM Image">
-            </div>        
             <script>
                 const fileInput = document.getElementById('fileInput');
                 const imageContainer = document.getElementById('gradcam');
@@ -122,15 +119,20 @@
                         reader.onload = function (e) {
                             const dataURL = e.target.result;
                             // Display the image
-                            imageContainer.innerHTML = `<img height="400" width="400" src="${dataURL}" alt="Uploaded Image">`;
+                            imageContainer.innerHTML = `<img height="500" style="object-fit: cover;" width="500" src="${dataURL}" alt="Uploaded Image">`;
                         };
                         reader.readAsDataURL(file);
                     }
                 }
             </script>
         </section>
-        <section class="classificationSection">
-            <p class="classificationDisplay">Classification: Abnormal</p>
+        <section style="width: 10rem;">
+          <p class="classificationDisplay"></p>
+        </section>
+        <section class="classificationSection" style="padding-left: 8rem;">
+          <div class="imageBox">
+              <img height="500" width="500" style="object-fit: cover;" src="placeholder.png" src="gradcam_image.jpg" alt="GradCAM Image">
+          </div>     
         </section>
     </main>
     <footer>
