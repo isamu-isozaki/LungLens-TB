@@ -96,21 +96,38 @@
     </nav>
     <div class="uploadContainer">
         <button id="upload">
-        <form action="../uploads/upload.php" method="post" enctype="multipart/form-data">
-            <label for="file">Select a file to upload:</label>
-            <input type="file" id="file" name="file">
-            <input type="submit" value="Upload">
+        <form>
+            <label for="file">Select a file to upload:</label>   
+            <input type="file" id="fileInput">
+            <!-- <input style="margin-top: 1rem;" type="submit" value="Upload"> -->
         </form>
         </button>
     </div>
     <main>
         <section class="imageSection">
-            <div class="imageBox">
-                <img src="input_image.jpg" alt="Input X-ray Image">
+            <div class="imageBox"id="gradcam">
+                <img src="input_image.jpg" height="300" alt="Input X-ray Image">
             </div>
             <div class="imageBox">
                 <img src="gradcam_image.jpg" alt="GradCAM Image">
-            </div>
+            </div>        
+            <script>
+                const fileInput = document.getElementById('fileInput');
+                const imageContainer = document.getElementById('gradcam');
+                fileInput.addEventListener('change', handleFileSelect);
+                function handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const dataURL = e.target.result;
+                            // Display the image
+                            imageContainer.innerHTML = `<img src="${dataURL}" alt="Uploaded Image">`;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            </script>
         </section>
         <section class="classificationSection">
             <p class="classificationDisplay">Classification: Abnormal</p>
