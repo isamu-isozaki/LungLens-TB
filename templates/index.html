@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Upload new File</title>
+    </head>
+    <body>
+        <h1>Upload new File</h1>
+        <form id="predict" method="post_form" enctype="multipart/form-data" action="http://localhost:4000/api/predict_tb">
+            <input type="file" name="file">
+            <input id="submit_tb" type="submit" value="Upload" onclick="submit_tb()">
+        </form>
+        <div id="tb_prediction"></div>
+        <img id="tb_image" src="" alt="TB Result">
+        <h1>Upload text for summary</h1>
+        
+        <form id="summary_form">
+            <textarea name="text" placeholder="Enter text here" rows="4" cols="50" style="width: 100%;"></textarea>
+            <input type="button" value="Submit" onclick="submitSummary()">
+        </form>
+        <div id="summary"></div>
+        <div id="status_message"></div>  <!-- Add this to show status messages -->
+        
+
+
+        <form id="translation_form">
+            <h1>Translate Text</h1>
+            <select name="language" id="language_select">
+                <option value="Hindi">Hindi</option>
+                <option value="Nepali">Nepali</option>
+                <option value="Marathi">Marathi</option>
+                <option value="Bengali">Bengali</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Filipino">Filipino</option>
+                <option value="French">French</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Igbo">Igbo (Nigeria)</option>
+            </select>
+            <input type="button" value="Translate" onclick="submitTranslation()">
+        </form>
+        <div id="translation_result"></div>
+
+        <div id="summary"></div>
+        
+        <div id="translation"></div>
+        <script>
+            document.getElementById("demo").onclick = function() {myFunction()};
+
+            function myFunction() {
+            document.getElementById("demo").innerHTML = "YOU CLICKED ME!";
+            }
+
+            function submitSummary() {
+                const formData = new FormData(document.getElementById('summary_form'));
+                const text = formData.get('text');  // Get the text input from the form
+
+                // Show waiting message
+                document.getElementById('status_message').innerText = 'Waiting for response...';
+
+                fetch('http://localhost:4000/api/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })  // Convert the text to JSON
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Clear the waiting message
+                    document.getElementById('status_message').innerText = '';
+                    
+                    if (data.error) {
+                        document.getElementById('summary').innerText = 'Error: ' + data.error;
+                    } else {
+                        document.getElementById('summary').innerText = 'Summary: ' + data.summary;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('status_message').innerText = '';
+                    document.getElementById('summary').innerText = 'Error: ' + error;
+                });
+            }
+
+            function submitTranslation() {
+                    const text = document.getElementById('summary').innerText;
+                    const language = document.getElementById('language_select').value;
+
+                    document.getElementById('translation_result').innerText = 'Waiting for translation...';
+
+                    fetch('http://localhost:4000/api/translate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ text: text, language: language })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('translation_result').innerText = 'Error: ' + data.error;
+                        } else {
+                            document.getElementById('translation_result').innerText = 'Translated Text: ' + data.translated_text;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('translation_result').innerText = 'Error: ' + error.toString();
+                    });
+                }
+        </script>
+    </body>
+</html>
