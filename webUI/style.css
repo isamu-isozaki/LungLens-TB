@@ -1,0 +1,292 @@
+/* style.css */
+
+/* Navbar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Navbar */
+.navBar {
+    background-color: #0F2560;
+    color: #B1B3B4;
+    padding: 1rem;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    width: 40px; /* Adjust as needed */
+    margin-right: 1rem;
+}
+
+.navLinks a {
+    color: #B1B3B4;
+    text-decoration: none;
+    margin-left: 1rem;
+    transition: color 0.3s ease;
+}
+
+.navLinks a:hover {
+    color: #85D7E1;
+}
+
+/* Main Content Sections */
+.aboutUsPage section {
+    padding: 1rem;
+    border: 1px solid #B1B3B4;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s ease;
+    animation: fadeIn 1s ease-in-out;
+}
+
+.aboutUsPage section:hover {
+    border-color: #38B6FF;
+}
+
+.logo {
+width: 40px; /* Adjust as needed */
+margin-right: 1rem;
+}
+
+/* Upload Button */
+#upload {
+    margin: 3rem;
+border: none;
+padding: 0.5rem 1rem;
+cursor: pointer;
+font-family: 'Montserrat', sans-serif;
+}
+
+/* Main Content Sections */
+section {
+
+padding: 1rem;
+border: none;
+margin-bottom: 1rem;
+}
+
+/* style.css */
+main {
+    display: flex;
+    flex-direction: row;
+}
+/* Navbar and other styles (as before) */
+
+/* Bounding Boxes */
+.boundingBox {
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+    /* Add other styles like width, height, etc. */
+}
+
+/* Classification Display */
+.classificationDisplay {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    color: #333;
+    /* Add any other relevant styles */
+}
+/* Button and button-like link styles */
+a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+a:hover {
+    background-color: #0056b3;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+input[type="submit"] {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+
+
+
+
+
+
+/* style.css */
+
+/* Reset default margin and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.logo {
+    width: 40px; /* Adjust as needed */
+    margin-right: 1rem;
+}
+
+/* Main Content Sections */
+.reportingPage {
+    display: flex;
+    justify-content: space-between;
+    padding: 2rem;
+}
+
+.inputSection,
+.outputSection {
+    flex: 1;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    margin-right: 1rem;
+}
+
+/* Input Text Area */
+#radiologistInput {
+    width: 100%;
+    height: 200px;
+    resize: vertical;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+}
+
+/* Patient Text (GPT Output) */
+.patientFriendlyReport {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    margin-top: 1rem;
+}
+
+
+
+
+
+/* style.css */
+
+/* Navbar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Navbar */
+.navBar {
+    background-color: #0F2560;
+    color: #B1B3B4;
+    padding: 1rem;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    width: 40px; /* Adjust as needed */
+    margin-right: 1rem;
+}
+
+.navLinks a {
+    color: #B1B3B4;
+    text-decoration: none;
+    margin-left: 1rem;
+    transition: color 0.3s ease;
+}
+
+.navLinks a:hover {
+    color: #85D7E1;
+}
+
+/* Main Content Sections */
+.aboutUsPage section {
+    padding: 1rem;
+    border: 1px solid #B1B3B4;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s ease;
+    animation: fadeIn 1s ease-in-out;
+}
+
+.aboutUsPage section:hover {
+    border-color: #38B6FF;
+}
+
+.logo {
+width: 40px; /* Adjust as needed */
+margin-right: 1rem;
+}
+
+/* Image Box */
+.teamMember img {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.teamMember img:hover {
+    transform: scale(1.1);
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+}
+
+.sect {
+    font-size: large;
+}
+
+footer {
+    text-align: center;
+    padding: 10px;
+    color: #000;
+    background-color: #0F2560;
+    margin-top: auto;
+}
+body {
+    color: #B1B3B4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}

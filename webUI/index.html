@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="lunglens_tb">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>lunglens_tb</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script>
+    // The value below is injected by flutter build, do not touch.
+    const serviceWorkerVersion = null;
+  </script>
+  <!-- This script adds the flutter initialization JS code -->
+  <script src="flutter.js" defer></script>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imaging Tool - LungLens TB</title>
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_API_KEY"></script>
+</head>
+<body>
+  <script>
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "firebase/app";
+    import { getAnalytics } from "firebase/analytics";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyDzlIWJp02E_PufQdiN7nq_ObePjqdEBWs",
+      authDomain: "lunglens-tb.firebaseapp.com",
+      projectId: "lunglens-tb",
+      storageBucket: "lunglens-tb.appspot.com",
+      messagingSenderId: "793335724412",
+      appId: "1:793335724412:web:7f1558f34abe1ef8ca0cf9",
+      measurementId: "G-F8MDDRMNDT"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    window.addEventListener('load', function(ev) {
+      // Download main.dart.js
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
+    <nav class="navBar">
+        <img class="logo" src="favicon.png" alt="Logo">
+        <div class="navLinks">
+            <a href="index.html">Imaging Tool</a>
+            <a href="reporting.html">Reporting Tool</a>
+            <a href="aboutUs.html">About Us</a>
+        </div>
+    </nav>
+    <div class="uploadContainer">
+        <button id="upload">
+        <form action="../uploads/upload.php" method="post" enctype="multipart/form-data">
+            <label for="file">Select a file to upload:</label>
+            <input type="file" id="file" name="file">
+            <input type="submit" value="Upload">
+        </form>
+        </button>
+    </div>
+    <main>
+        <section class="imageSection">
+            <div class="imageBox">
+                <img src="input_image.jpg" alt="Input X-ray Image">
+            </div>
+            <div class="imageBox">
+                <img src="gradcam_image.jpg" alt="GradCAM Image">
+            </div>
+        </section>
+        <section class="classificationSection">
+            <p class="classificationDisplay">Classification: Abnormal</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 LungLens TB. All rights reserved.</p>
+    </footer>
+</body>
+</html>
