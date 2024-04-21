@@ -12,6 +12,6 @@ accelerate launch pretraining.py
 For deployment do
 
 ```
-pip install python-dotenv flask langchain-openai
+pip install python-dotenv flask langchain-openai grad-cam
 python model_deployment.py
 ```
