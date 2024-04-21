@@ -33,7 +33,7 @@ import timm
 from timm.models import ResNet, ConvNeXt, EfficientNet, DenseNet
 from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
 
-from torchmetrics import Accuracy, F1Score
+from sklearn.metrics import f1_score, accuracy_score
 
 logger = get_logger(__name__)
 
@@ -42,9 +42,7 @@ def log_validation(model, accelerator, val_dataloader):
     
     v_model = accelerator.unwrap_model(model)
     
-    # Metrics
-    accuracy_metric = Accuracy(num_classes=2, average='macro', task='binary').to(accelerator.device)
-    f1_metric = F1Score(num_classes=2, threshold=0.5, task='binary').to(accelerator.device)
+    predicted_list, target_list = [],[]
 
     # Get v_model to evaluation mode
     v_model.eval()
@@ -57,15 +55,13 @@ def log_validation(model, accelerator, val_dataloader):
             loss = F.binary_cross_entropy_with_logits(predicted.float(), target.float(), reduction="mean")
             running_loss+=loss
             
-            accuracy_metric.update(predicted, target)
-            f1_metric.update(predicted, target)
+            predicted_list.extend(torch.argmax(predicted, dim=1).cpu().detach().numpy().tolist())
+            target_list.extend(torch.argmax(target, dim=1).cpu().detach().numpy().tolist())
 
-    print(predicted, target)
     # Compute metrics
     avg_loss = running_loss / len(val_dataloader)
-    accuracy = accuracy_metric.compute()
-    print("Accuracy computed")
-    f1 = f1_metric.compute()
+    accuracy = accuracy_score(target_list, predicted_list)
+    f1 = f1_score(target_list, predicted_list)
 
     logger.info(f"Validation Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}, F1 Score: {f1:.4f}")
     return avg_loss, accuracy, f1
@@ -197,7 +193,7 @@ def parse_args():
     parser.add_argument(
         "--validation_steps",
         type=int,
-        default=5,
+        default=250,
         help=(
             "Run validation every X steps. Validation consists of running the prompt"
             " `args.validation_prompt` multiple times: `args.num_validation_images`"
@@ -361,7 +357,7 @@ def main():
 
     dataset = load_dataset(args.train_dataset, args.train_configuration)["train"]
 
-    train_val_split = dataset.train_test_split(test_size=0.1)
+    train_val_split = dataset.train_test_split(test_size=0.05)
     # Now, train_val_split is a DatasetDict containing two datasets: 'train' and 'test'
     train_dataset = train_val_split['train']
     val_dataset = train_val_split['test']
@@ -465,6 +461,7 @@ def main():
     )
 
     # keep original embeddings as reference
+    best_val_loss = 1e100
     for epoch in range(first_epoch, args.num_train_epochs):
         model.train()
         for step, batch in enumerate(train_dataloader):
@@ -499,18 +496,25 @@ def main():
                     "lr": lr_scheduler.get_last_lr()[0]}
                 
                 if accelerator.is_main_process:
-                    print( global_step, args.validation_steps)
                     if global_step % args.validation_steps == 0:
                         val_loss, val_accuracy, val_f1 = log_validation(
                             model, accelerator, val_dataloader
                         )
 
-                        print(val_loss, val_accuracy, val_f1)
+                        if val_loss<best_val_loss:
+                            best_model_name = (
+                                f"best_model_val.bin"
+                            )
+                            best_save_path = os.path.join(args.output_dir, best_model_name)
+
+                            save_progress(
+                                model, best_save_path, accelerator
+                            )
 
                         logs = {"training loss": loss.detach().item(), 
-                                "validation loss": val_loss.detach().item(),
-                                "validation accuracy": val_accuracy.item(),
-                                "validation f1": val_f1.item(),
+                                "validation loss": val_loss,
+                                "validation accuracy": val_accuracy,
+                                "validation f1": val_f1,
                                 "lr": lr_scheduler.get_last_lr()[0]}
             
             
