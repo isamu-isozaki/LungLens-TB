@@ -163,12 +163,10 @@ def translate_text():
         return jsonify({'translated_text': translated_text}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    # app.run(debug=True)
     app.run(debug=True, static_files={'/static': './generated/'})
