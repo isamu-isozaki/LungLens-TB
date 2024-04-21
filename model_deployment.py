@@ -65,12 +65,15 @@ def allowed_file(filename):
 
 
 def transform_image(file_path):
-    my_transforms = transforms.Compose([transforms.Resize((224,224)),
+    my_transforms = transforms.Compose([transforms.Resize(256),
+                                        transforms.CenterCrop(224),
                                         transforms.ToTensor(),
                                         transforms.Normalize(
                                             [0.485, 0.456, 0.406],
                                             [0.229, 0.224, 0.225])])
+    
     image = Image.open(file_path)
+    image = image.convert("RGB")
     return my_transforms(image).unsqueeze(0)
 
 def get_prediction(filepath, filename):
@@ -99,10 +102,9 @@ def get_prediction(filepath, filename):
     return predicted_idx
 
 
-
-@app.route(f'/{GENERATION_FOLDER}/<path:path>')
+@app.route(f'/static/<path:path>')
 def send_report(path):
-    return send_from_directory(f'{GENERATION_FOLDER}', path)
+    return send_from_directory(f'/static/', path)
 
 @app.route('/api/predict_tb', methods=['POST', 'GET'])
 def predict():
@@ -163,4 +165,5 @@ def translate_text():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(debug=True, static_files={'/static': './generated/'})

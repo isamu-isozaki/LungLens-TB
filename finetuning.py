@@ -104,7 +104,6 @@ def parse_args():
         "--freeze_features",
         action="store_true",
         help="Freeze everything except base in timm model.",
-        default=True
     )
     parser.add_argument(
         "--save_steps",
@@ -132,7 +131,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
-        "--train_batch_size", type=int, default=384, help="Batch size (per device) for the training dataloader."
+        "--train_batch_size", type=int, default=64, help="Batch size (per device) for the training dataloader."
     )
     parser.add_argument("--num_train_epochs", type=int, default=100)
     parser.add_argument(
@@ -587,6 +586,7 @@ def main():
                             save_progress(
                                 model, best_save_path, accelerator
                             )
+                            best_val_loss = val_loss
                         
                         model.train()
 
