@@ -2,8 +2,8 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %} 
-        <h1>Patient Friendly Summary</h1>
-        
+        <h3>Patient Friendly Summary</h3>
+        <p>This page transforms complex radiology reports into patient-friendly summaries using advanced natural language processing techniques, making medical information more accessible and understandable. Additionally, it offers a feature to translate these summaries into various languages, further enhancing communication between healthcare providers and patients from diverse backgrounds.</p>
         <form id="summary_form">
             <textarea name="text" placeholder="Enter the radiology report here" rows="4" cols="50" style="width: 100%;"></textarea>
             <input type="button" value="Submit" onclick="submitSummary()">

@@ -2,17 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<h1>Tuberculosis Detection</h1>
-<p>This is the home page content.</p>
+<h3>Tuberculosis Detection</h3>
+<p>This web page utilizes a deep learning model to diagnose tuberculosis from X-ray images quickly and accurately. Upon uploading an X-ray, users receive a binary diagnosis along with a saliency map, which highlights key areas influencing the model's decision, aiding in transparency and educational purposes.</p>
 
-        <h2>Upload new File</h2>
+        <h4>Upload X-Ray Image</h4>
         <input id="lungImageUpload" type="file" name="file">
         <button class="ButtonSubmit" id="submitTb" >Submit Lung Image</button>
 
         <div id="tbPrediction"></div>
         <img id="tbImage" src="" alt="">
-        
-
         
         <script>
             document.getElementById("submitTb").onclick = function() {
