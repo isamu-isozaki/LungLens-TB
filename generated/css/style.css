@@ -1,0 +1,124 @@
+/* style.css */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #b8deef; /* Light bluish background */
+    color: #333;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background-color: #005792; /* Darker blue for contrast */
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between; /* Ensure logo and nav are on opposite ends */
+    align-items: center;
+}
+
+.header-logo {
+    height: 150px; /* Fixed height for consistency */
+    width: auto; /* Maintain aspect ratio */
+    align-content: left;
+}
+
+.ButtonSubmit{
+    background-color: #0073e6; /* Vibrant blue for buttons */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}   
+
+nav ul li {
+    margin-right: 20px;
+    display: inline-block; /* Correcting display for inline spacing */
+}
+
+nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 8px 12px; /* Padding for better touch targets */
+}
+
+nav ul li a:hover, nav ul li a:focus {
+    background-color: #0073e6; /* Interaction feedback */
+    border-radius: 4px; /* Rounded corners for aesthetics */
+}
+
+.content {
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff; /* White background for content areas */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+input[type="file"], textarea, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+input[type="button"] {
+    background-color: #0073e6; /* Vibrant blue for buttons */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+input[type="button"]:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Makes images block to center */
+    margin: 10px auto;
+}
+
+form {
+    margin-top: 20px;
+}
+
+footer {
+    background-color: #002d62;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+    nav ul {
+        flex-direction: column;
+    }
+
+    nav ul li {
+        margin: 10px 0; /* Increased space for easier navigation on mobile */
+    }
+}

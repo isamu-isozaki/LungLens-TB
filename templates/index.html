@@ -2,12 +2,12 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<h1>Welcome to the Home Page</h1>
+<h1>Tuberculosis Detection</h1>
 <p>This is the home page content.</p>
 
         <h2>Upload new File</h2>
         <input id="lungImageUpload" type="file" name="file">
-        <button id="submitTb">Submit Lung Image</button>
+        <button class="ButtonSubmit" id="submitTb" >Submit Lung Image</button>
 
         <div id="tbPrediction"></div>
         <img id="tbImage" src="" alt="">
