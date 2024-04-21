@@ -4,7 +4,7 @@ import torch
 from torchvision import models
 import torchvision.transforms as transforms
 from PIL import Image
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import timm
 from torch import no_grad, inference_mode
 from PatientFriend.ChatPatient import ChatPatient
@@ -164,6 +164,9 @@ def translate_text():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 if __name__ == '__main__':
-    # app.run(debug=True)
     app.run(debug=True, static_files={'/static': './generated/'})

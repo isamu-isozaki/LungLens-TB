@@ -5,29 +5,41 @@
     </head>
     <body>
         <h1>Upload new File</h1>
-        <form id="predict" method="post_form" enctype="multipart/form-data" action="http://localhost:4000/api/predict_tb">
-            <input type="file" name="file">
-            <input id="submit_tb" type="submit" value="Upload" onclick="submit_tb()">
-        </form>
-        <div id="tb_prediction"></div>
-        <img id="tb_image" src="" alt="TB Result">
+        <input id="lungImageUpload" type="file" name="file">
+        <button id="submitTb">Submit Lung Image</button>
+
+        <div id="tbPrediction"></div>
+        <img id="tbImage" src="" alt="TB Result">
         <h1>Upload text for summary</h1>
-        <form id="summary_form" method="post" enctype="multipart/form-data" action="http://localhost:4000/api/summarize">
-            <input type="text">
-            <input type="submit" value="Upload">
-        </form>
-        <form id="translation_form" method="post" enctype="multipart/form-data" action="http://localhost:4000/api/translation">
-            <input type="text">
-            <input type="submit" value="Upload">
-        </form>
+        <input id="summaryInput" type="text">
+        <button id="submitSummary">Submit Input For Summary</button>
+        <input id="translationInputInput" type="text">
+        <button id="submitTranslation">Submit Input For Translation</button>
+
+
         <div id="summary"></div>
         <div id="translation"></div>
         <script>
-            document.getElementById("demo").onclick = function() {myFunction()};
+            document.getElementById("submitTb").onclick = async function() {
+                let input = document.getElementById('lungImageUpload');
+                let data = new FormData();
+                data.append('file', input.files[0]);
+                const filename = input.files[0].name;
+                const uploadedUrl = "http://localhost:4000/static/".concat(filename);
+                console.log({uploadedUrl});
+                const url = "http://localhost:4000/api/predict_tb";
 
-            function myFunction() {
-            document.getElementById("demo").innerHTML = "YOU CLICKED ME!";
-            }
+                let response = await fetch(url, {
+                    method: "POST", // *GET, POST, PUT, DELETE, etc.
+                    body: data // body data type must match "Content-Type" header
+                });
+                response = response.json();
+                const class_id = response["class_id"];
+
+                document.getElementById("content").innerText = class_id;
+                document.getElementById("tbImage").src=uploadedUrl;
+            };
+
         </script>
     </body>
 </html>

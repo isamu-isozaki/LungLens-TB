@@ -4,3 +4,7 @@ wandb
 __pycache__/
 *.pyc
 
+Data/*
+*.ipynb
+upload_images
+generated
