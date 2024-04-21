@@ -106,7 +106,7 @@
     <main>
         <section class="imageSection">
             <div class="imageBox"id="gradcam">
-                <img src="input_image.jpg" height="300" alt="Input X-ray Image">
+                <img src="input_image.jpg"  alt="Input X-ray Image">
             </div>
             <div class="imageBox">
                 <img src="gradcam_image.jpg" alt="GradCAM Image">
@@ -122,7 +122,7 @@
                         reader.onload = function (e) {
                             const dataURL = e.target.result;
                             // Display the image
-                            imageContainer.innerHTML = `<img src="${dataURL}" alt="Uploaded Image">`;
+                            imageContainer.innerHTML = `<img height="400" width="400" src="${dataURL}" alt="Uploaded Image">`;
                         };
                         reader.readAsDataURL(file);
                     }
