@@ -17,6 +17,28 @@ import cv2
 import numpy as np
 from flask import send_from_directory
 
+from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def load_model(model, model_path):
+    """
+    Load a model from a saved state dictionary.
+
+    Args:
+        model (class): Model
+        model_path (str): Path to the saved model state dictionary.
+        accelerator (Accelerator): An accelerator object from the `accelerate` library.
+
+    Returns:
+        torch.nn.Module: The loaded and possibly accelerated model.
+    """    
+    # Load the state dictionary
+    state_dict = torch.load(model_path)
+    model.load_state_dict(state_dict)
+    model.to(device)
+    return model
 
 UPLOAD_FOLDER = './upload_images'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -25,10 +47,14 @@ os.makedirs(GENERATION_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model = timm.create_model("resnet18").to(device)
+model = timm.create_model("resnet50").to(device)
+
+
+model.global_pool, model.fc = create_classifier(model.num_features, 2, pool_type="avg")
+head = model.fc
 model.eval()
 
+model=load_model(model,'lunglens-model/ft_best_model_val.bin')
 
 
 app = Flask(__name__)
@@ -38,18 +64,16 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def transform_image(image_bytes):
-    my_transforms = transforms.Compose([transforms.Resize(224),
+def transform_image(file_path):
+    my_transforms = transforms.Compose([transforms.Resize((224,224)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(
                                             [0.485, 0.456, 0.406],
                                             [0.229, 0.224, 0.225])])
-    image = Image.open(io.BytesIO(image_bytes))
+    image = Image.open(file_path)
     return my_transforms(image).unsqueeze(0)
 
-@no_grad()
-@inference_mode()
-def get_prediction(image_bytes, filepath, filename):
+def get_prediction(filepath, filename):
     rgb_img = cv2.imread(filepath, cv2.IMREAD_COLOR)
     rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
 
@@ -59,7 +83,7 @@ def get_prediction(image_bytes, filepath, filename):
     # Resize the image to 224x224
     rgb_img_resized = cv2.resize(rgb_img, (224, 224))
 
-    tensor = transform_image(image_bytes=image_bytes).to(device)
+    tensor = transform_image(filepath).to(device)
     target_layers = [model.layer4[-1]]
     cam = GradCAM(model=model, target_layers=target_layers)
 
@@ -88,8 +112,8 @@ def predict():
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            img_bytes = file.read()
-            class_id = get_prediction(img_bytes, filepath, filename)
+            # img_bytes = file.read()
+            class_id = get_prediction(filepath, filename)
             return jsonify({'class_id': class_id})
     # For referencing this flask server in the frontend, use a action="http://..../api/predict_tb" in the form
     return '''

@@ -32,10 +32,37 @@ import wandb
 import timm
 from timm.models import ResNet, ConvNeXt, EfficientNet, DenseNet
 from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
+from torchvision import datasets
 
 from sklearn.metrics import f1_score, accuracy_score
 
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
+
 logger = get_logger(__name__)
+
+
+def  load_model(model, model_path, accelerator, *args, **kwargs):
+    """
+    Load a model from a saved state dictionary.
+
+    Args:
+        model (class): Model
+        model_path (str): Path to the saved model state dictionary.
+        accelerator (Accelerator): An accelerator object from the `accelerate` library.
+
+    Returns:
+        torch.nn.Module: The loaded and possibly accelerated model.
+    """
+    logger.info("Loading model")
+    
+    # Load the state dictionary
+    state_dict = torch.load(model_path, map_location=accelerator.device)
+    # state_dict = torch.load(model_path)
+    model.load_state_dict(state_dict)
+
+    # Use accelerator.prepare_model to wrap the model for distributed/parallel processing
+    return model
 
 def log_validation(model, accelerator, val_dataloader):
     logger.info("Logging validation")
@@ -77,6 +104,7 @@ def parse_args():
         "--freeze_features",
         action="store_true",
         help="Freeze everything except base in timm model.",
+        default=True
     )
     parser.add_argument(
         "--save_steps",
@@ -122,7 +150,7 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=1e-4,
+        default=1e-5,
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument(
@@ -193,7 +221,7 @@ def parse_args():
     parser.add_argument(
         "--validation_steps",
         type=int,
-        default=250,
+        default=100,
         help=(
             "Run validation every X steps. Validation consists of running the prompt"
             " `args.validation_prompt` multiple times: `args.num_validation_images`"
@@ -217,6 +245,19 @@ def parse_args():
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
     return args
+
+
+class TBDataset(torch.utils.data.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        image, label = self.dataset[idx]
+        # Convert label to a list to match your specified format
+        return {'image': image, 'labels': [label]}
 
 
 class NIHDataset(Dataset):
@@ -333,6 +374,10 @@ def main():
         head = model.classifier
     else:
         raise NotImplementedError(f"{args.timm_model_name} logic is not implemented")
+    
+    # Load the best model for finetuning
+    model = load_model(model, 'lunglens-model/best_model_val.bin', accelerator)
+
     if args.freeze_features:
         model.requires_grad_(False)
         head.requires_grad_(True)
@@ -340,6 +385,7 @@ def main():
     # warning: below does centercropping
     transform = timm.data.create_transform(**data_cfg)
 
+    
 
     if args.scale_lr:
         args.learning_rate = (
@@ -355,18 +401,54 @@ def main():
         eps=args.adam_epsilon,
     )
 
-    dataset = load_dataset(args.train_dataset, args.train_configuration)["train"]
+    class TBDataset(torch.utils.data.Dataset):
+        def __init__(self, dataset):
+            self.dataset = dataset
 
-    train_val_split = dataset.train_test_split(test_size=0.05)
-    # Now, train_val_split is a DatasetDict containing two datasets: 'train' and 'test'
-    train_dataset = train_val_split['train']
-    val_dataset = train_val_split['test']
+        def __len__(self):
+            return len(self.dataset)
 
-    ## Separate train and validation here.
+        def __getitem__(self, idx):
+            image, label = self.dataset[idx]
+            return {'image': image, 'labels': [label]}
+
+    # Load the dataset
+    dataset_path = '../Data/TB_Chest_Radiography_Database/'
+    original_dataset = datasets.ImageFolder(root=dataset_path)
+    custom_dataset = TBDataset(original_dataset)
+
+    # Get targets for stratification
+    targets = [label for _, label in original_dataset.imgs]
+
+    # Split into train and temp (temporary will be split further into validation and test)
+    train_indices, temp_indices = train_test_split(
+        range(len(custom_dataset)),
+        test_size=0.4,  # Suppose we reserve 40% of data initially to split further into validation and test
+        stratify=targets,
+        random_state=42
+    )
+
+    # Now split the temp dataset into validation and test datasets
+    val_indices, test_indices = train_test_split(
+        temp_indices,
+        test_size=0.5,  # Split the temporary set evenly into validation and test sets
+        stratify=[targets[i] for i in temp_indices],  # Stratify according to the subset of targets
+        random_state=42
+    )
+
+    # Create train, validation, and test subsets
+    train_dataset = Subset(custom_dataset, train_indices)
+    val_dataset = Subset(custom_dataset, val_indices)
+    test_dataset = Subset(custom_dataset, test_indices)
 
     # Dataset and DataLoaders creation:
     train_dataset = NIHDataset(
         dataset=train_dataset,
+        transform=transform
+    )
+
+    val_dataset = NIHDataset(
+        dataset=val_dataset,
         transform=transform
     )
     
@@ -374,11 +456,6 @@ def main():
         train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers, collate_fn=collate_fn
     )
 
-    # Dataset and DataLoaders creation:
-    val_dataset = NIHDataset(
-        dataset=val_dataset,
-        transform=transform
-    )
     val_dataloader = torch.utils.data.DataLoader(
         val_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers, collate_fn=collate_fn
     )
@@ -485,7 +562,7 @@ def main():
                 global_step += 1
                 if global_step % args.save_steps == 0:
                     weight_name = (
-                        f"{args.timm_model_name}-{global_step}.bin"
+                        f"FineTuned-{args.timm_model_name}-{global_step}.bin"
                     )
                     save_path = os.path.join(args.output_dir, weight_name)
                     save_progress(
@@ -503,7 +580,7 @@ def main():
 
                         if val_loss<best_val_loss:
                             best_model_name = (
-                                f"best_model_val.bin"
+                                f"ft_best_model_val.bin"
                             )
                             best_save_path = os.path.join(args.output_dir, best_model_name)
 
