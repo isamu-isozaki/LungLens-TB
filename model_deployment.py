@@ -25,7 +25,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def load_model(model, model_path):
     """
     Load a model from a saved state dictionary.
-
     Args:
         model (class): Model
         model_path (str): Path to the saved model state dictionary.
@@ -116,7 +115,11 @@ def predict():
             file.save(filepath)
             # img_bytes = file.read()
             class_id = get_prediction(filepath, filename)
-            return jsonify({'class_id': class_id})
+            if class_id==0:
+                class_name = "No Tuberculosis Detected"
+            else:
+                class_name = "Tuberculosis Detected"
+            return jsonify({'class_id': class_name})
     # For referencing this flask server in the frontend, use a action="http://..../api/predict_tb" in the form
     return '''
     <!doctype html>
@@ -167,6 +170,14 @@ def translate_text():
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/summarize')
+def summarize():
+    return render_template('summarize.html')
+
+@app.route('/aboutus')
+def about_us():
+    return render_template('aboutus.html')  
 
 if __name__ == '__main__':
     app.run(debug=True, static_files={'/static': './generated/'})

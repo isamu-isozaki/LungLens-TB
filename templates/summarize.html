@@ -1,42 +1,49 @@
 <!-- index.html -->
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
-{% block content %}
-<h1>Welcome to the Home Page</h1>
-<p>This is the home page content.</p>
-
-        <h2>Upload new File</h2>
-        <input id="lungImageUpload" type="file" name="file">
-        <button id="submitTb">Submit Lung Image</button>
-
-        <div id="tbPrediction"></div>
-        <img id="tbImage" src="" alt="">
+{% block content %} 
+        <h1>Patient Friendly Summary</h1>
+        
+        <form id="summary_form">
+            <textarea name="text" placeholder="Enter the radiology report here" rows="4" cols="50" style="width: 100%;"></textarea>
+            <input type="button" value="Submit" onclick="submitSummary()">
+        </form>
+        <div id="summary"></div>
+        <div id="status_message"></div>  <!-- Add this to show status messages -->
         
 
+
+        <form id="translation_form">
+            <select name="language" id="language_select" style="width: 20%;">
+                <option value="Hindi">Hindi</option>
+                <option value="Nepali">Nepali</option>
+                <option value="Marathi">Marathi</option>
+                <option value="Bengali">Bengali</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Filipino">Filipino</option>
+                <option value="French">French</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Igbo">Igbo (Nigeria)</option>
+                <!-- Additional LMIC languages -->
+                <option value="Swahili">Swahili (East Africa)</option>
+                <option value="Amharic">Amharic (Ethiopia)</option>
+                <option value="Hausa">Hausa (Nigeria)</option>
+                <option value="Portuguese">Portuguese (Mozambique)</option>
+                <option value="Burmese">Burmese (Myanmar)</option>
+                <option value="Khmer">Khmer (Cambodia)</option>
+                <option value="Lao">Lao (Laos)</option>
+                <option value="Vietnamese">Vietnamese (Vietnam)</option>
+                <option value="Uzbek">Uzbek (Uzbekistan)</option>
+                <option value="Tagalog">Tagalog (Philippines)</option>
+            </select>
+            <input type="button" value="Translate" onclick="submitTranslation()">
+        </form>
+        <div id="translation_result"></div>
+
+        <div id="summary"></div>
         
+        <div id="translation"></div>
         <script>
-            document.getElementById("submitTb").onclick = function() {
-                let input = document.getElementById('lungImageUpload');
-                let data = new FormData();
-                data.append('file', input.files[0]);
-                const filename = input.files[0].name;
-                const uploadedUrl = "http://localhost:4000/static/".concat(filename);
-                console.log({uploadedUrl});
-                const url = "http://localhost:4000/api/predict_tb";
-
-                let response = fetch(url, {
-                    method: "POST", // *GET, POST, PUT, DELETE, etc.
-                    body: data // body data type must match "Content-Type" header
-                }).then(response => response.json())
-                .then(data => {
-                    const class_id = data.class_id;
-                    console.log(data);
-                    console.log({class_id});
-                    console.log(class_id.toString());
-                    document.getElementById("tbPrediction").innerText = class_id.toString();
-                    document.getElementById("tbImage").src=uploadedUrl;
-                });
-            };
 
             function submitSummary() {
                 const formData = new FormData(document.getElementById('summary_form'));
@@ -97,4 +104,4 @@
                     });
                 }
         </script>
-    {% endblock %}
+{% endblock %}
