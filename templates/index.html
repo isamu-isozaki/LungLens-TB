@@ -5,94 +5,53 @@
 <h3>Tuberculosis Detection</h3>
 <p>This web page utilizes a deep learning model to diagnose tuberculosis from X-ray images quickly and accurately. Upon uploading an X-ray, users receive a binary diagnosis along with a saliency map, which highlights key areas influencing the model's decision, aiding in transparency and educational purposes.</p>
 
-        <h4>Upload X-Ray Image</h4>
-        <input id="lungImageUpload" type="file" name="file">
-        <button class="ButtonSubmit" id="submitTb" >Submit Lung Image</button>
+<h4>Upload X-Ray Image</h4>
+<input id="lungImageUpload" type="file" name="file">
+<button class="ButtonSubmit" id="submitTb">Submit Lung Image</button>
 
-        <div id="tbPrediction"></div>
-        <img id="tbImage" src="" alt="">
-        
-        <script>
-            document.getElementById("submitTb").onclick = function() {
-                let input = document.getElementById('lungImageUpload');
-                let data = new FormData();
-                data.append('file', input.files[0]);
-                const filename = input.files[0].name;
-                const uploadedUrl = "http://localhost:4000/static/".concat(filename);
-                console.log({uploadedUrl});
-                const url = "http://localhost:4000/api/predict_tb";
+<div id="processingMessage" style="display: none;">Processing...</div>
+<div id="tbPrediction"></div>
+<img id="uploadedImage" src="" alt="Uploaded Image" style="display: none; width: 20%; height: auto;">
+<img id="tbImage" src="" alt="TB Result" style="display: none; width: 20%; height: auto;">
 
-                let response = fetch(url, {
-                    method: "POST", // *GET, POST, PUT, DELETE, etc.
-                    body: data // body data type must match "Content-Type" header
-                }).then(response => response.json())
-                .then(data => {
-                    const class_id = data.class_id;
-                    console.log(data);
-                    console.log({class_id});
-                    console.log(class_id.toString());
-                    document.getElementById("tbPrediction").innerText = class_id.toString();
-                    document.getElementById("tbImage").src=uploadedUrl;
-                });
-            };
 
-            function submitSummary() {
-                const formData = new FormData(document.getElementById('summary_form'));
-                const text = formData.get('text');  // Get the text input from the form
+<script>
+    document.getElementById("submitTb").onclick = function() {
+        let input = document.getElementById('lungImageUpload');
+        let data = new FormData();
+        data.append('file', input.files[0]);
 
-                // Show waiting message
-                document.getElementById('status_message').innerText = 'Waiting for response...';
+        // Display the uploaded image immediately
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let uploadedImage = document.getElementById("uploadedImage");
+            uploadedImage.src = e.target.result;
+            uploadedImage.style.display = "block";
+        };
+        reader.readAsDataURL(input.files[0]);
 
-                fetch('http://localhost:4000/api/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ text: text })  // Convert the text to JSON
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Clear the waiting message
-                    document.getElementById('status_message').innerText = '';
-                    
-                    if (data.error) {
-                        document.getElementById('summary').innerText = 'Error: ' + data.error;
-                    } else {
-                        document.getElementById('summary').innerText = 'Summary: ' + data.summary;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('status_message').innerText = '';
-                    document.getElementById('summary').innerText = 'Error: ' + error;
-                });
-            }
+        // Show processing message
+        document.getElementById("processingMessage").style.display = "block";
 
-            function submitTranslation() {
-                    const text = document.getElementById('summary').innerText;
-                    const language = document.getElementById('language_select').value;
+        const filename = input.files[0].name;
+        const uploadedUrl = "http://localhost:4000/static/" + filename;
+        console.log({uploadedUrl});
+        const url = "http://localhost:4000/api/predict_tb";
 
-                    document.getElementById('translation_result').innerText = 'Waiting for translation...';
-
-                    fetch('http://localhost:4000/api/translate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ text: text, language: language })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            document.getElementById('translation_result').innerText = 'Error: ' + data.error;
-                        } else {
-                            document.getElementById('translation_result').innerText = 'Translated Text: ' + data.translated_text;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        document.getElementById('translation_result').innerText = 'Error: ' + error.toString();
-                    });
-                }
-        </script>
-    {% endblock %}
+        fetch(url, {
+            method: "POST",
+            body: data
+        }).then(response => response.json())
+        .then(data => {
+            document.getElementById("processingMessage").style.display = "none"; // Hide processing message
+            const class_id = data.class_id;
+            console.log(data);
+            console.log({class_id});
+            console.log(class_id.toString());
+            document.getElementById("tbPrediction").innerText = "Diagnosis: " + class_id.toString();
+            document.getElementById("tbImage").src = uploadedUrl;
+            document.getElementById("tbImage").style.display = "block";
+        });
+    };
+</script>
+{% endblock %}

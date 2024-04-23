@@ -37,7 +37,7 @@ class ChatPatient:
 
         try:
             response = self.llm.invoke(messages)
-            return response.content
+            return response.content.replace("Summary","")
         except Exception as e:
             print(f"An error occurred: {e}")
             return "An error occurred while generating the summary. Please try again later."

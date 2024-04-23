@@ -19,7 +19,7 @@ from flask import send_from_directory
 
 from timm.layers import NormMlpClassifierHead, ClassifierHead, create_classifier, LayerNorm2d, LayerNorm
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 def load_model(model, model_path):
@@ -116,7 +116,7 @@ def predict():
             # img_bytes = file.read()
             class_id = get_prediction(filepath, filename)
             if class_id==0:
-                class_name = "No Tuberculosis Detected"
+                class_name = "No Findings"
             else:
                 class_name = "Tuberculosis Detected"
             return jsonify({'class_id': class_name})
@@ -144,8 +144,9 @@ def summarize_text():
         return jsonify({'error': 'No text provided'}), 400
 
     try:
-        summary = chat_patient.get_friendly_text(report_text)
+        summary = chat_patient.get_friendly_text(report_text).replace('Summary:','')
         return jsonify({'summary': summary}), 200
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
